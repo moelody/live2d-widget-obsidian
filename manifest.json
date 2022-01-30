@@ -1,6 +1,6 @@
 {
-	"id": "liv2d-obsidian",
-	"name": "Live2D Obsidian",
+	"id": "liv2d-widget-obsidian",
+	"name": "Live2D Widget",
 	"version": "1.0.1",
 	"minAppVersion": "1.0.1",
 	"description": "This plugin will add live2d model widget to obsidian",
