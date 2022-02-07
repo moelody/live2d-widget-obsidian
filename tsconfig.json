@@ -2,21 +2,25 @@
     "compilerOptions": {
         "baseUrl": "src",
         "inlineSourceMap": true,
-        "inlineSources": true,
-        "target": "es6",
+        "inlineSources": false,
         "module": "ESNext",
-        "allowJs": true,
-        "noImplicitAny": true, // 不允许隐式的any类型
+        "target": "es2016",
+        "allowJs": false,
+        "noImplicitAny": false, // 不允许隐式的any类型
+        "strictFunctionTypes": true,
+        "strictNullChecks": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
         "strict": true,
         "allowSyntheticDefaultImports": true,
-        // "noImplicitThis": true,
-        // "alwaysStrict": false,
-        // "strictNullChecks": true, // button?.addEventListener
         "suppressImplicitAnyIndexErrors": true,
+        "downlevelIteration": true,
         "moduleResolution": "node",
+        "esModuleInterop": true,
         "importHelpers": true,
-        "lib": ["dom", "es5", "scripthost", "es2015"],
+        "lib": ["dom", "es5", "scripthost", "es2016"],
         "outDir": ""
     },
-    "include": ["src/*.ts"]
+    "include": ["src/*.ts"],
+    "exclude": ["lib/*"]
 }
