@@ -1,4 +1,7 @@
 import { App, PluginSettingTab, Setting } from "obsidian"
+import { Throttle, Debounced } from './lodash'
+import { ColorPicker } from './components/ColorPicker'
+import '../lib/slider-color-picker.min'
 import path from 'path'
 import Live2DPlugin from "./main"
 
@@ -28,7 +31,7 @@ export const DEFAULT_SETTINGS =
         bottom: "90%",
         hOffset: 20,
         border: "1px solid var(--background-modifier-border,#424958)",
-        background: "rgba(39, 43, 52, .7)"
+        background: "#272b34cc"
     },
     tool: {
         enable: true,
@@ -65,12 +68,12 @@ export class Live2DSettingsTab extends PluginSettingTab
 
         function setSettings(payload: string, tips: object)
         {
-            let i = 0
             let settings = self.plugin.settings[payload]
             for (let set in settings)
             {
 
                 let oldValue = settings[set]
+                let textContainer
 
                 let setting = new Setting(containerEl)
                     .setName(tips[set][0])
@@ -84,22 +87,34 @@ export class Live2DSettingsTab extends PluginSettingTab
                         {
                             settings[set] = newVal
                             self.plugin.saveSettings()
-                            RefreshLive2D(self.plugin.settings)
+                            RefreshLive2D(set, self.plugin.settings)
                         })
                     })
                 } else
                 {
                     setting.addText(text =>
                     {
-                        text.setValue(oldValue.toString()).onChange((newVal) =>
+                        textContainer = text
+                        text.setValue(oldValue.toString()).onChange(new Debounced().use((newVal) =>
                         {
                             settings[set] = <typeof oldValue>newVal
                             self.plugin.saveSettings()
-                            RefreshLive2D(self.plugin.settings)
-                        })
+                            RefreshLive2D(set, self.plugin.settings)
+                        }, 100))
                     })
                 }
-                i++
+                let match = String.prototype.match.call(oldValue, /#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/)
+                if (match)
+                {
+                    let color = match[0]
+                    new ColorPicker(setting.controlEl, settings).setValue(color).onChange((newVal) =>
+                    {
+                        textContainer.setValue(oldValue.replace(color, newVal))
+                        settings[set] = oldValue.replace(color, newVal)
+                        self.plugin.saveSettings()
+                        RefreshLive2D(set, self.plugin.settings)
+                    }).build();
+                }
             }
         }
 
@@ -149,12 +164,6 @@ export class Live2DSettingsTab extends PluginSettingTab
             texture: ['Model Skin Switch(Only For MultiTexture', '模型皮肤切换', '模型皮肤切换（模型配置有多贴图时有效）']
         }
         setSettings('tool', toolSettings)
-
-        const colorCustomization = new Setting(containerEl)
-            .setName('Icon color')
-            .setDesc('Change the color of the displayed icons.');
-
-        ColorPicker(colorCustomization)
 
         containerEl.createEl('h2', { text: 'Support Development', attr: { style: 'text-align: left' } });
 
@@ -218,28 +227,13 @@ export class Live2DSettingsTab extends PluginSettingTab
 
 }
 
-function ColorPicker(colorCustomization: Setting)
-{
-    const containerEl = colorCustomization.controlEl;
-    const pickerEl = document.createElement('slider-color-picker');
-    const inputEl = containerEl.createEl('div', {
-        type: 'color',
-        attr: { "style": "width: 32px;height: 32px;border: 1px solid red;border-radius: 100%;background-color: red;" }
-    })
-    inputEl.onclick = function ()
-    {
-        containerEl.appendChild(pickerEl);
-    }
-
-}
-
 function RedirectToPort(url: string, settings: Live2DSettings)
 {
     const regex = /(https?|ftp|file):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]/
     return regex.test(url) ? url : path.join(`http://127.0.0.1:${settings.port}/`, url)
 }
 
-export function LoadFontawesome(settings: Live2DSettings)
+export function LoadDepend(settings: Live2DSettings)
 {
     var head = document.getElementsByTagName('head')[0];
     var link = document.createElement('link');
@@ -268,18 +262,29 @@ export function LoadLive2D(settings: Live2DSettings)
     script.onload = function ()
     {
         LoadWidget(settings)
+        const toolStyle = document.createElement('style');
+        toolStyle.id = 'live2d-tool-style-start'
+        toolStyle.innerHTML = `
+        #live2d-widget-tool {
+            opacity: 1 !important;
+        }`;
+        document.head.appendChild(toolStyle);
+        new Debounced().use(() =>
+        {
+            toolStyle.remove()
+        }, 5000)()
     }
     script.src = RedirectToPort('lib/L2Dwidget.min.js', settings);
     document.body.append(script)
 }
 
-export function RefreshLive2D(settings: Live2DSettings)
+export function RefreshLive2D(set: string, settings: Live2DSettings)
 {
     UnloadLive2D()
     LoadLive2D(settings)
 }
 
-export function UnloadFontawesome()
+export function UnloadDepend()
 {
     document.querySelector('#live2d-fontawesome')?.remove()
 }
