@@ -1,20 +1,36 @@
 # Live2D Widget Plugin In Obsidian
 
+![](./img/home.png)
+
 该插件将会将一个live2d模型添加到界面上
 
 This plugin will add a live2d model on the obsidian interface. Just fun for some time.
 
-## How to custom model
+![](./img/settings.png)
 
-- jsonPath 修改设置中模型设置，只配置单个模型通过修改jsonPath的模型JSON路径，可以是网址可以是本地，本地类似 `model/index.json` 我还没有测试过，如出现问题可以提Issue
-- listPath 多个模型要配置listPath模型列表JSON，配置后jsonPath会被覆盖失效，格式参考我给的列子
-- tipPath 自定义tipPath可以修改鼠标经过元素后弹出的对话框内容
-- homePath 如果模型列表中的根路径同listPath，则homePath可以不写，写了后覆盖所有读取配置的根路径
+模型可在设置中自定义路径和各种工具样式
 
-- jsonPath live2d model json path. can url or local. local maybe unused just like `model/index.json`. welcome to take issue.
-- listPath live2d models json path. It will cover jsonPath setting. format can see in my sample.
-- tipPath custom mouse over element popup dialog content.
-- homePath almost unnecessary. if model json root path not same with list json path in your listPath. It can be cover all model root json path.
+Model path can set from local or url and can custom tool style in settings.
+
+![](./img/widget.png)
+
+工具介绍：
+- 一言：随机一句话
+- 飞机：小飞机游戏
+- 照相：给模型截图
+- 模型：切换模型
+- 皮肤：切换皮肤
+- 仓库：小挂件仓库
+- 隐藏：隐藏模型
+
+tools sidebar:
+- Hitokoto: random one word
+- plane: small plane game
+- camera: take photo for model
+- model: switch model by list path
+- skin: switch model skin
+- repo: go to lib repository
+- hide: hide model
 
 ## Installation
 

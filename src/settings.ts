@@ -1,8 +1,9 @@
-import { App, PluginSettingTab, Setting } from "obsidian"
+import { App, PluginSettingTab, Setting, FileSystemAdapter } from "obsidian"
 import { Throttle, Debounced } from './lodash'
 import { ColorPicker } from './components/ColorPicker'
 import '../lib/slider-color-picker.min'
 import path from 'path'
+import { exec } from 'child_process'
 import Live2DPlugin from "./main"
 
 // Remember to rename these classes and interfaces!
@@ -31,6 +32,7 @@ export const DEFAULT_SETTINGS =
         bottom: "90%",
         hOffset: 20,
         border: "1px solid var(--background-modifier-border,#424958)",
+        boxShadow: "1px 1px 1px 0px #dcddde33",
         background: "#272b34cc"
     },
     tool: {
@@ -63,6 +65,8 @@ export class Live2DSettingsTab extends PluginSettingTab
     {
         let self = this
         let { containerEl } = this
+        const vault = this.app.vault;
+        const basePath = (vault.adapter instanceof FileSystemAdapter) ? vault.adapter.getBasePath() : null
 
         containerEl.empty()
 
@@ -103,6 +107,7 @@ export class Live2DSettingsTab extends PluginSettingTab
                         }, 100))
                     })
                 }
+                // match hex color && add color picker
                 let match = String.prototype.match.call(oldValue, /#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/)
                 if (match)
                 {
@@ -115,15 +120,44 @@ export class Live2DSettingsTab extends PluginSettingTab
                         RefreshLive2D(set, self.plugin.settings)
                     }).build();
                 }
+                // add slider controller
+                if (typeof oldValue == 'number')
+                {
+                    setting.addSlider(slider =>
+                    {
+                        if (set == ('scale' || 'superSample')) slider.setLimits(0, 10, 0.1)
+                        else slider.setLimits(Math.floor(oldValue / 10), oldValue * 10, 1)
+
+                        slider.setDynamicTooltip().setValue(oldValue).onChange(new Debounced().use((newVal) =>
+                        {
+                            textContainer.setValue(newVal.toString())
+                            settings[set] = newVal
+                            self.plugin.saveSettings()
+                            RefreshLive2D(set, self.plugin.settings)
+                        }, 100))
+                    })
+                }
             }
         }
 
         containerEl.createEl("h2", { text: "Model Settings" })
+        new Setting(containerEl)
+            .setName('Open Local Model Path')
+            .setDesc('打开本地模型路径')
+            .addButton((button) =>
+            {
+                button
+                    .setButtonText('Models')
+                    .onClick(() =>
+                    {
+                        exec(`start "" "${path.join(basePath + '/.obsidian/plugins/live2d-widget-obsidian/models')}"`);
+                    });
+            });
         let modelSettings = {
-            jsonPath: ['Model Json Path', '模型路径', '单个模型的Json地址'],
-            homePath: ['Assets Home Path', '根路径', '模型根路径，例如：https://cdn.jsdelivr.net/gh/moelody/live2d-models@latest/'],
-            listPath: ['Model List Path', '多模型列表路径', '看板娘列表，配置后覆盖单个模型，不配置此项请务必配置单个模型'],
-            tipPath: ['Element Selector tips Path', '元素触发器路径', '看板娘触发，如homePath已配置可留空默认读取路径下model_tips.json']
+            jsonPath: ['Model Json Path(local or url.also below)', '模型路径', '单个模型的Json地址'],
+            homePath: ['Assets Home Path', '根路径', '模型资产路径,，配置后自动读取路径下的model_list和model_tips'],
+            listPath: ['Model List Path', '多模型列表路径', '看板娘模型列表，配置后覆盖单个模型 It\'ll cover Json Path.'],
+            tipPath: ['Element Selector tips Path', '元素触发器路径', '看板娘对话触发']
         }
         setSettings('model', modelSettings)
 
@@ -146,6 +180,7 @@ export class Live2DSettingsTab extends PluginSettingTab
             bottom: ['Dialog Bottom Margin', '底部边距', '对话框距离模型底部边距'],
             hOffset: ['Dialog Horizontal Offset', '水平偏移', '基于工具栏位置的水平偏移'],
             border: ['Dialog Border', '边框', '对话框边框CSS'],
+            boxShadow: ['Dialog Box Shadow', '投影', '对话框投影CSS'],
             background: ['Dialog Background', '背景', '对话框背景CSS']
         }
         setSettings('dialog', dialogSettings)
